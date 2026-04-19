@@ -1,0 +1,36 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+*.class
+
+# Generated files & Build
+bin/
+gen/
+out/
+.gradle/
+build/
+
+# Local configuration & IDE files
+local.properties
+.idea/
+*.iml
+*.iws
+*.ipr
+captures/
+.externalNativeBuild
+.cxx/
+
+# Secrets (Penting!)
+*.jks
+*.keystore
+*.p12
+# google-services.json
+
+# Files to ignore
+*.log
+*.hprof
+.DS_Store
+Thumbs.db
