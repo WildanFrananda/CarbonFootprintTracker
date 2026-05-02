@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class HistoryuUiState(
+data class HistoryUiState(
     val isLoading: Boolean = true,
     val activities: List<ActivityResponseDto> = emptyList(),
     val currentDate: String = "",
@@ -25,8 +25,8 @@ data class HistoryuUiState(
 class HistoryViewModel @Inject constructor(
     private val activityApi: ActivityApi
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(HistoryuUiState())
-    val uiState: StateFlow<HistoryuUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(HistoryUiState())
+    val uiState: StateFlow<HistoryUiState> = _uiState.asStateFlow()
 
     init {
         loadTodayActivities()

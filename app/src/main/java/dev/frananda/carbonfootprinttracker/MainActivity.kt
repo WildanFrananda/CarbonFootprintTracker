@@ -26,7 +26,6 @@ import dev.frananda.carbonfootprinttracker.ui.features.auth.RegisterScreen
 import dev.frananda.carbonfootprinttracker.ui.features.main.MainScreen
 import dev.frananda.carbonfootprinttracker.ui.navigation.Screen
 import dev.frananda.carbonfootprinttracker.ui.theme.CarbonFootprintTrackerTheme
-import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 
 @AndroidEntryPoint
