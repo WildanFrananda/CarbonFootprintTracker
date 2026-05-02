@@ -11,6 +11,10 @@ sealed class Screen(val route: String) {
     object Login : Screen("login_screen")
     object Register : Screen("register_screen")
     object Main : Screen("main_screen")
+    object ForgotPassword : Screen("forgot_password_screen")
+    object ResetPassword : Screen("reset_password_screen?token={token}") {
+        fun createRoute(token: String) = "reset_password_screen?token=$token"
+    }
 }
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {

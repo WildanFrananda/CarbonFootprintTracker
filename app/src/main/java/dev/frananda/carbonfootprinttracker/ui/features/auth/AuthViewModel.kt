@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.frananda.carbonfootprinttracker.core.network.ErrorParser
 import dev.frananda.carbonfootprinttracker.core.utils.Resource
+import dev.frananda.carbonfootprinttracker.data.remote.ForgotPasswordRequest
+import dev.frananda.carbonfootprinttracker.data.remote.GoogleLoginRequest
 import dev.frananda.carbonfootprinttracker.data.remote.LoginRequest
 import dev.frananda.carbonfootprinttracker.data.remote.RegisterRequest
+import dev.frananda.carbonfootprinttracker.data.remote.ResetPasswordRequest
 import dev.frananda.carbonfootprinttracker.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +45,45 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _authState.value = Resource.Loading
             val result = authRepository.register(request)
+            result.onSuccess {
+                _authState.value = Resource.Success(Unit)
+            }.onFailure { exception ->
+                val errorMessage = ErrorParser.parse(exception)
+                _authState.value = Resource.Error(errorMessage)
+            }
+        }
+    }
+
+    fun loginWithGoogle(request: GoogleLoginRequest): Unit {
+        viewModelScope.launch {
+            _authState.value = Resource.Loading
+            val result = authRepository.googleLogin(request)
+            result.onSuccess {
+                _authState.value = Resource.Success(Unit)
+            }.onFailure { exception ->
+                val errorMessage = ErrorParser.parse(exception)
+                _authState.value = Resource.Error(errorMessage)
+            }
+        }
+    }
+
+    fun requestForgotPassword(request: ForgotPasswordRequest): Unit {
+        viewModelScope.launch {
+            _authState.value = Resource.Loading
+            val result = authRepository.forgotPassword(request)
+            result.onSuccess {
+                _authState.value = Resource.Success(Unit)
+            }.onFailure { exception ->
+                val errorMessage = ErrorParser.parse(exception)
+                _authState.value = Resource.Error(errorMessage)
+            }
+        }
+    }
+
+    fun submitResetPassword(request: ResetPasswordRequest): Unit {
+        viewModelScope.launch {
+            _authState.value = Resource.Loading
+            val result = authRepository.resetPassword(request)
             result.onSuccess {
                 _authState.value = Resource.Success(Unit)
             }.onFailure { exception ->

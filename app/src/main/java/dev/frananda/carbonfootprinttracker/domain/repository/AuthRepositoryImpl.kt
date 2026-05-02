@@ -3,8 +3,11 @@ package dev.frananda.carbonfootprinttracker.domain.repository
 import dev.frananda.carbonfootprinttracker.core.network.ErrorParser
 import dev.frananda.carbonfootprinttracker.data.local.SecureStorage
 import dev.frananda.carbonfootprinttracker.data.remote.AuthApi
+import dev.frananda.carbonfootprinttracker.data.remote.ForgotPasswordRequest
+import dev.frananda.carbonfootprinttracker.data.remote.GoogleLoginRequest
 import dev.frananda.carbonfootprinttracker.data.remote.LoginRequest
 import dev.frananda.carbonfootprinttracker.data.remote.RegisterRequest
+import dev.frananda.carbonfootprinttracker.data.remote.ResetPasswordRequest
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -43,7 +46,49 @@ class AuthRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(Exception(ErrorParser.parse(e)))
         }
+    }
 
+    override suspend fun googleLogin(request: GoogleLoginRequest): Result<Unit> {
+        return try {
+            val response = authApi.googleLogin(request)
+            if (response.status == "success" && response.data != null) {
+                secureStorage.saveTokens(
+                    accessToken = response.data.access_token,
+                    refreshToken = response.data.refresh_token
+                )
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.message ?: "Google Sign In Failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(ErrorParser.parse(e)))
+        }
+    }
+
+    override suspend fun forgotPassword(request: ForgotPasswordRequest): Result<Unit> {
+        return try {
+            val response = authApi.forgotPassword(request)
+            if (response.status == "success") {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.message ?: "Forgot Password Failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(ErrorParser.parse(e)))
+        }
+    }
+
+    override suspend fun resetPassword(request: ResetPasswordRequest): Result<Unit> {
+        return try {
+            val response = authApi.resetPassword(request)
+            if (response.status == "success") {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.message ?: "Forgot Password Failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(ErrorParser.parse(e)))
+        }
     }
 
     override fun isLoggedIn(): Boolean {

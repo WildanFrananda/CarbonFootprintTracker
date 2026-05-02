@@ -14,15 +14,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import dagger.hilt.android.AndroidEntryPoint
 import dev.frananda.carbonfootprinttracker.core.utils.AuthEvent
 import dev.frananda.carbonfootprinttracker.core.utils.AuthEventBus
 import dev.frananda.carbonfootprinttracker.ui.features.auth.AuthViewModel
+import dev.frananda.carbonfootprinttracker.ui.features.auth.ForgotPasswordScreen
 import dev.frananda.carbonfootprinttracker.ui.features.auth.LoginScreen
 import dev.frananda.carbonfootprinttracker.ui.features.auth.RegisterScreen
+import dev.frananda.carbonfootprinttracker.ui.features.auth.ResetPasswordScreen
 import dev.frananda.carbonfootprinttracker.ui.features.main.MainScreen
 import dev.frananda.carbonfootprinttracker.ui.navigation.Screen
 import dev.frananda.carbonfootprinttracker.ui.theme.CarbonFootprintTrackerTheme
@@ -93,6 +98,9 @@ fun CarbonApp(
                     navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
+                },
+                onNavigateToForgotPassword = {
+                    navController.navigate(Screen.ForgotPassword.route)
                 }
             )
         }
@@ -105,6 +113,34 @@ fun CarbonApp(
                 onRegisterSuccess = {
                     navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.ResetPassword.route,
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "carbonfootprinttracker://reset-password?token={token}"
+                }
+            ),
+            arguments = listOf(
+                navArgument("token") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val token = backStackEntry.arguments?.getString("token") ?: ""
+            ResetPasswordScreen(
+                token = token,
+                onResetSuccess = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )

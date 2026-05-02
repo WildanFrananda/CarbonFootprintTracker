@@ -35,15 +35,18 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -57,18 +60,25 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.frananda.carbonfootprinttracker.R
+import dev.frananda.carbonfootprinttracker.core.utils.GoogleAuthManager
 import dev.frananda.carbonfootprinttracker.core.utils.Resource
+import dev.frananda.carbonfootprinttracker.data.remote.GoogleLoginRequest
 import dev.frananda.carbonfootprinttracker.data.remote.LoginRequest
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     onLoginSuccess: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ): Unit {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val googleAuthManager = remember { GoogleAuthManager(context) }
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -78,6 +88,13 @@ fun LoginScreen(
             onLoginSuccess()
         } else if (authState is Resource.Error) {
             snackbarHostState.showSnackbar((authState as Resource.Error).message)
+            viewModel.resetState()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetState()
         }
     }
 
@@ -89,12 +106,7 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFFE8F5E9),
-                            Color(0xFFF4FBF4)
-                        )
-                    )
+                    MaterialTheme.colorScheme.background
                 )
         ) {
             Column(
@@ -130,7 +142,7 @@ fun LoginScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 2.dp,
                     shadowElevation = 8.dp
                 ) {
@@ -167,8 +179,8 @@ fun LoginScreen(
                             shape = RoundedCornerShape(12.dp),
                             leadingIcon = { Icon(Icons.Outlined.Email, null) },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color(0xFFF1F5F9),
-                                unfocusedContainerColor = Color(0xFFE8F5E9),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 unfocusedBorderColor = Color.LightGray,
                                 focusedBorderColor = MaterialTheme.colorScheme.primary
                             )
@@ -185,7 +197,10 @@ fun LoginScreen(
                                 text = "Password",
                                 style = MaterialTheme.typography.labelLarge
                             )
-                            TextButton(onClick = { /* TODO: Handle forgot password */ }) {
+                            TextButton(
+                                onClick = onNavigateToForgotPassword,
+                                enabled = authState !is Resource.Loading
+                            ) {
                                 Text("Forgot Password?", style = MaterialTheme.typography.labelLarge)
                             }
                         }
@@ -200,8 +215,8 @@ fun LoginScreen(
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color(0xFFF1F5F9),
-                                unfocusedContainerColor = Color(0xFFE8F5E9),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 unfocusedBorderColor = Color.LightGray,
                                 focusedBorderColor = MaterialTheme.colorScheme.primary
                             )
@@ -237,7 +252,14 @@ fun LoginScreen(
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             OutlinedButton(
-                                onClick = { },
+                                onClick = {
+                                    scope.launch {
+                                        val idToken = googleAuthManager.getGoogleIdToken("895132569048-am63e79kms9htm3v81s4qmh2dgek969o.apps.googleusercontent.com")
+                                        if (idToken != null) {
+                                            viewModel.loginWithGoogle(GoogleLoginRequest(idToken))
+                                        }
+                                    }
+                                },
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(50.dp),
