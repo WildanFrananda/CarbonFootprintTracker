@@ -1,5 +1,6 @@
 package dev.frananda.carbonfootprinttracker.domain.repository
 
+import dev.frananda.carbonfootprinttracker.core.network.ErrorParser
 import dev.frananda.carbonfootprinttracker.data.local.SecureStorage
 import dev.frananda.carbonfootprinttracker.data.remote.AuthApi
 import dev.frananda.carbonfootprinttracker.data.remote.LoginRequest
@@ -23,7 +24,7 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.failure(Exception(response.message ?: "Login Failed"))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ErrorParser.parse(e)))
         }
     }
 
@@ -40,8 +41,9 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.failure(Exception(response.message ?: "Registration Failed"))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ErrorParser.parse(e)))
         }
+
     }
 
     override fun isLoggedIn(): Boolean {

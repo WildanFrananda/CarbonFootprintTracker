@@ -1,36 +1,39 @@
 package dev.frananda.carbonfootprinttracker
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import dev.frananda.carbonfootprinttracker.core.utils.AuthEvent
+import dev.frananda.carbonfootprinttracker.core.utils.AuthEventBus
 import dev.frananda.carbonfootprinttracker.ui.features.auth.AuthViewModel
 import dev.frananda.carbonfootprinttracker.ui.features.auth.LoginScreen
 import dev.frananda.carbonfootprinttracker.ui.features.auth.RegisterScreen
-import dev.frananda.carbonfootprinttracker.ui.features.home.HomeScreen
+import dev.frananda.carbonfootprinttracker.ui.features.main.MainScreen
 import dev.frananda.carbonfootprinttracker.ui.navigation.Screen
 import dev.frananda.carbonfootprinttracker.ui.theme.CarbonFootprintTrackerTheme
+import kotlinx.coroutines.flow.collectLatest
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var authEventBus: AuthEventBus
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -40,7 +43,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    CarbonApp()
+                    CarbonApp(authEventBus = authEventBus)
                 }
             }
         }
@@ -48,13 +51,33 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun CarbonApp(authViewModel: AuthViewModel = hiltViewModel()): Unit {
+fun CarbonApp(
+    authViewModel: AuthViewModel = hiltViewModel(),
+    authEventBus: AuthEventBus
+): Unit {
     val navController = rememberNavController()
+    val context = LocalContext.current
     val startDestination = remember {
         if (authViewModel.checkLoginStatus()) {
-            Screen.Home.route
+            Screen.Main.route
         } else {
             Screen.Login.route
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        authEventBus.events.collect { event ->
+            when (event) {
+                AuthEvent.RATE_LIMITED -> {
+                    Toast.makeText(context, "Too much request try again later.", Toast.LENGTH_SHORT).show()
+                }
+                AuthEvent.UNAUTHORIZED_LOGOUT -> {
+                    Toast.makeText(context, "Unauthorized logout", Toast.LENGTH_LONG).show()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
         }
     }
 
@@ -68,7 +91,7 @@ fun CarbonApp(authViewModel: AuthViewModel = hiltViewModel()): Unit {
                     navController.navigate(Screen.Register.route)
                 },
                 onLoginSuccess = {
-                    navController.navigate(Screen.Home.route) {
+                    navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 }
@@ -81,16 +104,16 @@ fun CarbonApp(authViewModel: AuthViewModel = hiltViewModel()): Unit {
                     navController.popBackStack()
                 },
                 onRegisterSuccess = {
-                    navController.navigate(Screen.Home.route) {
+                    navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable(Screen.Home.route) {
-            HomeScreen(
-                onNavigateToLogin = {
+        composable(Screen.Main.route) {
+            MainScreen(
+                onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }

@@ -1,5 +1,6 @@
 package dev.frananda.carbonfootprinttracker.ui.features.auth
 
+import android.util.Patterns
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +34,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.frananda.carbonfootprinttracker.core.utils.Resource
 import dev.frananda.carbonfootprinttracker.data.remote.RegisterRequest
 
+fun isValidEmail(email: String): Boolean {
+    return Patterns.EMAIL_ADDRESS.matcher(email).matches()
+}
+
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
@@ -45,6 +50,12 @@ fun RegisterScreen(
 
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val isInputValid = remember(email, password, displayName) {
+        email.isNotBlank() && isValidEmail(email) &&
+                password.isNotBlank() && password.length >= 6 &&
+                displayName.isNotBlank()
+    }
 
     LaunchedEffect(authState) {
         when (authState) {
@@ -112,7 +123,7 @@ fun RegisterScreen(
             Button(
                 onClick = { viewModel.register(RegisterRequest(email, password, displayName)) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = authState !is Resource.Loading && email.isNotBlank() && password.isNotBlank() && displayName.isNotBlank()
+                enabled = authState !is Resource.Loading && isInputValid
             ) {
                 if (authState is Resource.Loading) {
                     CircularProgressIndicator(
@@ -131,15 +142,4 @@ fun RegisterScreen(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegisterScreenPreview(): Unit {
-    RegisterScreen(
-        onNavigateToLogin = {
-
-        },
-        onRegisterSuccess = {}
-    )
 }

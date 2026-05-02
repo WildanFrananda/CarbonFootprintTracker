@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.frananda.carbonfootprinttracker.core.network.ErrorParser
 import dev.frananda.carbonfootprinttracker.core.utils.DateUtils
-import dev.frananda.carbonfootprinttracker.data.remote.DailyDashboardDto
+import dev.frananda.carbonfootprinttracker.domain.model.DailyDashboardModel
 import dev.frananda.carbonfootprinttracker.domain.repository.DashboardRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,8 +17,8 @@ import javax.inject.Inject
 
 data class HomeUiState(
     val isLoading: Boolean = false,
-    val dailyData: DailyDashboardDto? = null,
-    val recommendations: List<String> = emptyList(),
+    val dailyData: DailyDashboardModel? = null,
+    val recommendations: String? = null,
     val error: String? = null
 )
 
@@ -49,7 +49,7 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         dailyData = dailyResult.getOrNull(),
-                        recommendations = insightResult.getOrNull()?.recommendations ?: emptyList()
+                        recommendations = insightResult.getOrNull()?.ai_insight
                     )
                 }
             } else {

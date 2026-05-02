@@ -14,17 +14,20 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
+import java.security.GeneralSecurityException
 
 interface SecureStorage {
     fun saveTokens(accessToken: String, refreshToken: String)
     fun getAccessToken(): String?
     fun getRefreshToken(): String?
     fun clearTokens(): Unit
+    fun getDeviceId(): String?
+    fun saveDeviceId(deviceId: String): Unit
 }
 
 @Singleton
 class SecureStorageImpl @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext private val context: Context
 ) : SecureStorage {
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("secure_prefs", Context.MODE_PRIVATE)
@@ -38,22 +41,32 @@ class SecureStorageImpl @Inject constructor(
     }
 
     private fun generateKeyStoreKey() {
-        val keyStore = KeyStore.getInstance(provider)
-        keyStore.load(null)
+        try {
+            val keyStore = KeyStore.getInstance(provider)
+            keyStore.load(null)
 
-        if (!keyStore.containsAlias(keyAlias)) {
-            val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, provider)
-            val spec = KeyGenParameterSpec.Builder(
-                keyAlias,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-            )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
-                .build()
+            if (!keyStore.containsAlias(keyAlias)) {
+                val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, provider)
+                val spec = KeyGenParameterSpec.Builder(
+                    keyAlias,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                )
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .setKeySize(256)
+                    .build()
 
-            keyGenerator.init(spec)
-            keyGenerator.generateKey()
+                keyGenerator.init(spec)
+                keyGenerator.generateKey()
+            }
+        } catch (e: GeneralSecurityException) {
+            context.getSharedPreferences("secure_prefs", Context.MODE_PRIVATE)
+                .edit(commit = true) {
+                    clear()
+                }
+            generateKeyStoreKey()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -73,14 +86,14 @@ class SecureStorageImpl @Inject constructor(
         System.arraycopy(iv, 0, combined, 0, iv.size)
         System.arraycopy(encryptedData, 0, combined, iv.size, encryptedData.size)
         
-        return Base64.encodeToString(combined, Base64.DEFAULT)
+        return Base64.encodeToString(combined, Base64.NO_WRAP)
     }
 
     private fun decrypt(encryptedBase64: String?): String? {
         if (encryptedBase64 == null) return null
         return try {
-            val combined = Base64.decode(encryptedBase64, Base64.DEFAULT)
-            val iv = combined.sliceArray(0 until 12) // GCM IV standar adalah 12 bytes
+            val combined = Base64.decode(encryptedBase64, Base64.NO_WRAP)
+            val iv = combined.sliceArray(0 until 12)
             val encryptedData = combined.sliceArray(12 until combined.size)
 
             val cipher = Cipher.getInstance(transformation)
@@ -112,5 +125,15 @@ class SecureStorageImpl @Inject constructor(
 
     override fun clearTokens(): Unit {
         sharedPreferences.edit { clear() }
+    }
+
+    override fun getDeviceId(): String? {
+        return decrypt(sharedPreferences.getString("device_id", null))
+    }
+
+    override fun saveDeviceId(deviceId: String) {
+        sharedPreferences.edit {
+            putString("device_id", encrypt(deviceId))
+        }
     }
 }

@@ -15,7 +15,9 @@ data class BaseResponse<T>(
 @Serializable
 data class AuthTokens(
     val access_token: String,
-    val refresh_token: String
+    val refresh_token: String,
+    val user_id: String,
+    val display_name: String
 )
 
 @Serializable

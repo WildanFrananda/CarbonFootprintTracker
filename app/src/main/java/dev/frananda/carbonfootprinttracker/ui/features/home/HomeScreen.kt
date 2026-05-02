@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
@@ -29,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.frananda.carbonfootprinttracker.ui.components.DonutChart
 import dev.frananda.carbonfootprinttracker.ui.features.auth.AuthViewModel
 import dev.frananda.carbonfootprinttracker.ui.features.log_activity.LogActivityBottomSheet
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -49,6 +50,8 @@ fun HomeScreen(
     val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     var showBottomSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val scope = rememberCoroutineScope()
 
     val isGreenDay = uiState.dailyData?.is_green_day ?: false
     val targetBackgroundColor = if (isGreenDay) {
@@ -68,7 +71,7 @@ fun HomeScreen(
         containerColor = animatedBackgroundColor,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showBottomSheet = true },
+                onClick = { showBottomSheet = true},
                 containerColor =  if (isGreenDay) MaterialTheme.colorScheme.primary else Color(0xFFD32F2F)
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Record Emission", tint = Color.White)
@@ -117,24 +120,28 @@ fun HomeScreen(
                         }
                     }
 
-                    if (uiState.recommendations.isNotEmpty()) {
+                    if (!uiState.recommendations.isNullOrBlank()) {
                         item {
                             Text(
                                 text = "AI Recommendation",
                                 style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.align(Alignment.Start as Alignment)
+                                modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 8.dp)
                             )
                         }
 
-                        items(uiState.recommendations) { tip ->
+                        item {
                             Card(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
                             ) {
                                 Text(
-                                    text = tip,
+                                    text = uiState.recommendations!!,
                                     modifier = Modifier.padding(16.dp),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
@@ -163,6 +170,9 @@ fun HomeScreen(
                 onDismiss = { showBottomSheet = false },
                 onSuccess = {
                     homeViewModel.loadDashboardData()
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Activity logged! Check your achievements for new badges.")
+                    }
                 }
             )
         }

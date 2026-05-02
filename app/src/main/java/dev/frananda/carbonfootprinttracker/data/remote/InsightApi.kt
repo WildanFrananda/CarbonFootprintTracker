@@ -5,10 +5,12 @@ import retrofit2.http.GET
 
 @Serializable
 data class InsightDto(
-    val recommendations: List<String>
+    val dominant_category: String,
+    val message: String,
+    val ai_insight: String
 )
 
 interface InsightApi {
-    @GET("/api/insight/recommendations")
+    @GET("/api/insights/recommendations")
     suspend fun getRecommendations(): BaseResponse<InsightDto>
 }

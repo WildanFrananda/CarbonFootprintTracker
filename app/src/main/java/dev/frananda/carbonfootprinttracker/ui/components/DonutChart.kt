@@ -21,11 +21,11 @@ import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import dev.frananda.carbonfootprinttracker.data.remote.CategoryEmission
+import dev.frananda.carbonfootprinttracker.domain.model.CategoryEmissionModel
 
 @Composable
 fun DonutChart(
-    emissions: List<CategoryEmission>,
+    emissions: List<CategoryEmissionModel>,
     totalEmission: Double,
     modifier: Modifier = Modifier
 ): Unit {

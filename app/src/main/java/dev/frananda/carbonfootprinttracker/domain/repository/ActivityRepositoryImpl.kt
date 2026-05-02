@@ -1,7 +1,9 @@
 package dev.frananda.carbonfootprinttracker.domain.repository
 
+import dev.frananda.carbonfootprinttracker.core.network.ErrorParser
 import dev.frananda.carbonfootprinttracker.data.remote.ActivityApi
 import dev.frananda.carbonfootprinttracker.data.remote.ActivityRequest
+import dev.frananda.carbonfootprinttracker.data.remote.EmissionFactorDto
 import javax.inject.Inject
 
 class ActivityRepositoryImpl @Inject constructor(
@@ -16,7 +18,20 @@ class ActivityRepositoryImpl @Inject constructor(
                 Result.failure(Exception(response.message ?: "Failed to log activity"))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ErrorParser.parse(e)))
+        }
+    }
+
+    override suspend fun getEmissionFactors(): Result<List<EmissionFactorDto>> {
+        return try {
+            val response = activityApi.getEmissionFactors()
+            if (response.status == "success" && response.data != null) {
+                Result.success(response.data)
+            } else {
+                Result.failure(Exception(response.message ?: "Failed to fetch emission factors"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(ErrorParser.parse(e)))
         }
     }
 }

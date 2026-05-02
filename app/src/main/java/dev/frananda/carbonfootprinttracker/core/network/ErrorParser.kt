@@ -9,22 +9,19 @@ object ErrorParser {
     fun parse(throwable: Throwable): String {
         return when (throwable) {
             is HttpException -> {
+                val errorBody = throwable.response()?.errorBody()?.string()
+                if (errorBody.isNullOrBlank()) return "Server error (${throwable.code()})"
                 try {
-                    val errorBody = throwable.response()?.errorBody()?.string()
-                    if (errorBody != null) {
-                        val json = Json { ignoreUnknownKeys = true }
-                        val baseResponse = json.decodeFromString<BaseResponse<Any>>(errorBody)
-                        baseResponse.message ?: "Server Error"
-                    } else {
-                        "Unknown error occurred (HTTP ${throwable.code()}"
-                    }
+                    val json = Json { ignoreUnknownKeys = true }
+                    val response = json.decodeFromString<BaseResponse<Unit>>(errorBody)
+                    response.message ?: "Unknown server error"
                 } catch (e: Exception) {
-                    "Failed to parse error: ${e.message}"
+                    "Server error: ${throwable.code()}"
                 }
             }
 
             is IOException -> "No internet connection, check your connection and try again."
-            else -> "Unknown error occurred: ${throwable.message}"
+            else -> "Unknown error occurred: ${throwable.localizedMessage}"
         }
     }
 }

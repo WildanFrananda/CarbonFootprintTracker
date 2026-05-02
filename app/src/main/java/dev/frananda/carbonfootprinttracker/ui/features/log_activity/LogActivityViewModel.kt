@@ -11,26 +11,58 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.frananda.carbonfootprinttracker.data.remote.EmissionFactorDto
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
+data class LogActivitiesUiState(
+    val factors: List<EmissionFactorDto> = emptyList(),
+    val isLoadingFactors: Boolean = true,
+    val submitState: Resource<Unit> = Resource.Idle,
+    val fetchError: String? = null
+)
+
+@HiltViewModel
 class LogActivityViewModel @Inject constructor(
     private val activityRepository: ActivityRepository
 ) : ViewModel() {
-    private val _submitState = MutableStateFlow<Resource<Unit>>(Resource.Idle)
-    val submitState: StateFlow<Resource<Unit>> = _submitState.asStateFlow()
+    private val _uiState = MutableStateFlow(LogActivitiesUiState())
+    val uiState: StateFlow<LogActivitiesUiState> = _uiState.asStateFlow()
+
+    init {
+        fetchEmissionFactors()
+    }
+
+    private fun fetchEmissionFactors(): Unit {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingFactors = true, fetchError = null) }
+            val result = activityRepository.getEmissionFactors()
+
+            result.onSuccess { factorsData ->
+                _uiState.update {
+                    it.copy(isLoadingFactors = false, factors = factorsData)
+                }
+            }.onFailure { exception ->
+                _uiState.update {
+                    it.copy(isLoadingFactors = false, fetchError = ErrorParser.parse(exception))
+                }
+            }
+        }
+    }
 
     fun submitActivity(category: String, subcategory: String, quantityStr: String): Unit {
         val quantity = quantityStr.toDoubleOrNull()
         if (quantity == null || quantity <= 0) {
-            _submitState.value = Resource.Error("Invalid quantity and above 0")
+            _uiState.update { it.copy(submitState = Resource.Error("Invalid quantity")) }
             return
         }
 
         viewModelScope.launch {
-            _submitState.value = Resource.Loading
+            _uiState.update { it.copy(submitState = Resource.Loading) }
             val request = ActivityRequest(
-                category = category,
-                subcategory = subcategory,
+                category = category.lowercase(),
+                subcategory = subcategory.lowercase(),
                 quantity = quantity,
                 date = DateUtils.getCurrentDateInLocalTimezone()
             )
@@ -38,14 +70,14 @@ class LogActivityViewModel @Inject constructor(
             val result = activityRepository.logActivity(request)
 
             result.onSuccess {
-                _submitState.value = Resource.Success(Unit)
+                _uiState.update { it.copy(submitState = Resource.Success(Unit)) }
             }.onFailure { exception ->
-                _submitState.value = Resource.Error(ErrorParser.parse(exception))
+                _uiState.update { it.copy(submitState = Resource.Error(ErrorParser.parse(exception))) }
             }
         }
     }
 
-    fun resetState(): Unit {
-        _submitState.value = Resource.Idle
+    fun resetSubmitState(): Unit {
+        _uiState.update { it.copy(submitState = Resource.Idle) }
     }
 }

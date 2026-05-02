@@ -7,7 +7,7 @@ import java.util.TimeZone
 
 object DateUtils {
     fun getCurrentDateInLocalTimezone(): String {
-        val formatter = SimpleDateFormat("yyy-MM-dd", Locale.getDefault())
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         formatter.timeZone = TimeZone.getDefault()
         return formatter.format(Date())
     }

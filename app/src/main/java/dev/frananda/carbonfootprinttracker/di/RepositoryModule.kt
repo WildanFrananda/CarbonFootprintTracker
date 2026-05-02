@@ -10,6 +10,8 @@ import dev.frananda.carbonfootprinttracker.domain.repository.AuthRepository
 import dev.frananda.carbonfootprinttracker.domain.repository.AuthRepositoryImpl
 import dev.frananda.carbonfootprinttracker.domain.repository.DashboardRepository
 import dev.frananda.carbonfootprinttracker.domain.repository.DashboardRepositoryImpl
+import dev.frananda.carbonfootprinttracker.domain.repository.UserRepository
+import dev.frananda.carbonfootprinttracker.domain.repository.UserRepositoryImpl
 import javax.inject.Singleton
 
 @Module
@@ -32,4 +34,10 @@ abstract class RepositoryModule {
     abstract fun bindDashboardRepository(
         dashboardRepositoryImpl: DashboardRepositoryImpl
     ): DashboardRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserRepository(
+        userRepositoryImpl: UserRepositoryImpl
+    ): UserRepository
 }

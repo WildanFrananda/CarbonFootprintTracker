@@ -11,6 +11,10 @@ import dev.frananda.carbonfootprinttracker.data.remote.ActivityApi
 import dev.frananda.carbonfootprinttracker.data.remote.AuthApi
 import dev.frananda.carbonfootprinttracker.data.remote.DashboardApi
 import dev.frananda.carbonfootprinttracker.data.remote.InsightApi
+import dev.frananda.carbonfootprinttracker.BuildConfig
+import dev.frananda.carbonfootprinttracker.core.network.DeviceIdInterceptor
+import dev.frananda.carbonfootprinttracker.data.remote.GamificationApi
+import dev.frananda.carbonfootprinttracker.data.remote.UserApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -21,12 +25,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    private const val BASE_URL = "http://10.0.2.2:8000"
-
     @Provides
     @Singleton
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
+        deviceIdInterceptor: DeviceIdInterceptor,
         tokenAuthenticator: TokenAuthenticator
     ): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -34,6 +37,7 @@ object NetworkModule {
         }
 
         return OkHttpClient.Builder()
+            .addInterceptor(deviceIdInterceptor)
             .addInterceptor(authInterceptor)
             .authenticator(tokenAuthenticator)
             .addInterceptor(loggingInterceptor)
@@ -47,7 +51,7 @@ object NetworkModule {
         val contentType = "application/json".toMediaType()
 
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
@@ -75,5 +79,17 @@ object NetworkModule {
     @Singleton
     fun provideInsightApi(retrofit: Retrofit): InsightApi {
         return retrofit.create(InsightApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserApi(retrofit: Retrofit): UserApi {
+        return retrofit.create(UserApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGamificationApi(retrofit: Retrofit): GamificationApi {
+        return retrofit.create(GamificationApi::class.java)
     }
 }
