@@ -6,20 +6,38 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.serialization.Serializable
 
-sealed class Screen(val route: String) {
-    object Login : Screen("login_screen")
-    object Register : Screen("register_screen")
-    object Main : Screen("main_screen")
-    object ForgotPassword : Screen("forgot_password_screen")
-    object ResetPassword : Screen("reset_password_screen?token={token}") {
-        fun createRoute(token: String) = "reset_password_screen?token=$token"
+/**
+ * Root Graphs
+ */
+@Serializable object AuthGraph
+@Serializable
+object MainGraph
+
+/**
+ * Auth Destinations
+ */
+@Serializable object Login
+@Serializable object Register
+@Serializable object ForgotPassword
+@Serializable data class ResetPassword(val token: String)
+
+/**
+ * Main Destinations
+ */
+@Serializable object Home
+@Serializable object History
+@Serializable object Analytics
+@Serializable object Profile
+
+sealed class BottomNavItem(val route: Any, val title: String, val icon: ImageVector) {
+    object HomeItem : BottomNavItem(Home, "Home", Icons.Filled.Home)
+    object HistoryItem : BottomNavItem(History, "History", Icons.Filled.History)
+    object AnalyticsItem : BottomNavItem(Analytics, "Analytics", Icons.Filled.Info)
+    object ProfileItem : BottomNavItem(Profile, "Profile", Icons.Filled.Person)
+
+    companion object {
+        val items = listOf(HomeItem, HistoryItem, AnalyticsItem, ProfileItem)
     }
-}
-
-sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
-    object Home : BottomNavItem("home_tab", "Home", Icons.Filled.Home)
-    object History : BottomNavItem("history_tab", "History", Icons.Filled.History)
-    object Analytics : BottomNavItem("analytics_tab", "Analytics", Icons.Filled.Info)
-    object Profile : BottomNavItem("profile_tab", "Profile", Icons.Filled.Person)
 }

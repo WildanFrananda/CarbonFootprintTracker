@@ -268,7 +268,7 @@ fun LoginScreen(
                                 // Change with R.drawable.ic_google
                                 Icon(Icons.Outlined.Email, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Google", color = Color.Black)
+                                Text("Google", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             OutlinedButton(
                                 onClick = { },
@@ -280,7 +280,7 @@ fun LoginScreen(
                                 // Change with R.drawable.ic_apple
                                 Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Apple", color = Color.Black)
+                                Text("Apple", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }

@@ -1,29 +1,34 @@
 package dev.frananda.carbonfootprinttracker.ui.features.home
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,49 +37,83 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.frananda.carbonfootprinttracker.ui.components.DonutChart
-import dev.frananda.carbonfootprinttracker.ui.features.auth.AuthViewModel
+import dev.frananda.carbonfootprinttracker.R
+import dev.frananda.carbonfootprinttracker.ui.features.home.components.CurrentMonthCard
+import dev.frananda.carbonfootprinttracker.ui.features.home.components.RecommendationCard
+import dev.frananda.carbonfootprinttracker.ui.features.home.components.WeeklyActivityCard
 import dev.frananda.carbonfootprinttracker.ui.features.log_activity.LogActivityBottomSheet
+import dev.frananda.carbonfootprinttracker.ui.theme.Spacing
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToLogin: () -> Unit,
-    authViewModel: AuthViewModel = hiltViewModel(),
     homeViewModel: HomeViewModel = hiltViewModel()
 ): Unit {
     val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     var showBottomSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-
     val scope = rememberCoroutineScope()
-
-    val isGreenDay = uiState.dailyData?.is_green_day ?: false
-    val targetBackgroundColor = if (isGreenDay) {
-        MaterialTheme.colorScheme.background
-    } else {
-        Color(0xFFFFF0F0)
-    }
-
-    val animatedBackgroundColor by animateColorAsState(
-        targetValue = targetBackgroundColor,
-        animationSpec = tween(durationMillis = 800),
-        label = "BgColorAnim"
-    )
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = animatedBackgroundColor,
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.background)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.carbon_tracker),
+                                contentDescription = null,
+                                modifier = Modifier.align(Alignment.Center),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "CarbonTracker",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* Notification */ }) {
+                        Icon(
+                            Icons.Default.NotificationsNone,
+                            contentDescription = "Notifications",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showBottomSheet = true},
-                containerColor =  if (isGreenDay) MaterialTheme.colorScheme.primary else Color(0xFFD32F2F)
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape,
+                modifier = Modifier.padding(bottom = Spacing.sm)
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Record Emission", tint = Color.White)
+                Icon(Icons.Filled.Add, contentDescription = "Record Emission")
             }
         }
     ) { paddingValues ->
@@ -85,81 +124,43 @@ fun HomeScreen(
         ) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (uiState.error != null) {
-                Text(
-                    text = uiState.error ?: "Error",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center)
-                )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    contentPadding = PaddingValues(Spacing.md),
                 ) {
                     item {
-                        Text(
-                            text = if (isGreenDay) "Great! Your emission is green 🌱" else "Warning! Your Emission is not green ⚠️",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = if (isGreenDay) Color(0xFF2E7D32) else Color(0xFFD32F2F)
-                        )
-                        Spacer(modifier = Modifier.height(32.dp))
-                    }
-
-                    uiState.dailyData?.let { data ->
-                        item {
-                            if (data.total_emission > 0) {
-                                DonutChart(
-                                    emissions = data.breakdown,
-                                    totalEmission = data.total_emission
-                                )
-                            } else {
-                                Text("No data available")
-                            }
-                            Spacer(modifier = Modifier.height(32.dp))
-                        }
-                    }
-
-                    if (!uiState.recommendations.isNullOrBlank()) {
-                        item {
+                        Column(modifier = Modifier.padding(vertical = Spacing.sm)) {
                             Text(
-                                text = "AI Recommendation",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp)
+                                text = "Hello, Wildan Frananda!",
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontSize = 32.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Here is your eco-impact summary.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color(0xFF6B7280)
                             )
                         }
-
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                )
-                            ) {
-                                Text(
-                                    text = uiState.recommendations!!,
-                                    modifier = Modifier.padding(16.dp),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
+                        Spacer(modifier = Modifier.height(Spacing.md))
                     }
 
                     item {
-                        Spacer(modifier = Modifier.height(48.dp))
-                        Button(
-                            onClick = {
-                                authViewModel.logout()
-                                onNavigateToLogin()
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text("Logout")
-                        }
+                        CurrentMonthCard(emission = uiState.dailyData?.total_emission?.toString() ?: "0.0")
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                    }
+
+                    item {
+                        WeeklyActivityCard()
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                    }
+
+                    item {
+                        RecommendationCard(
+                            recommendation = uiState.recommendations ?: "Swapping one beef meal for a plant-based option today can reduce your food footprint by 60%."
+                        )
+                        Spacer(modifier = Modifier.height(Spacing.xl))
                     }
                 }
             }
@@ -169,6 +170,7 @@ fun HomeScreen(
             LogActivityBottomSheet(
                 onDismiss = { showBottomSheet = false },
                 onSuccess = {
+                    showBottomSheet = false
                     homeViewModel.loadDashboardData()
                     scope.launch {
                         snackbarHostState.showSnackbar("Activity logged! Check your achievements for new badges.")

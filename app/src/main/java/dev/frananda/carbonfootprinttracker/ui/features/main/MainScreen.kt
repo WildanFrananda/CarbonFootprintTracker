@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -20,20 +21,15 @@ import dev.frananda.carbonfootprinttracker.ui.features.analytics.AnalyticsScreen
 import dev.frananda.carbonfootprinttracker.ui.features.history.HistoryScreen
 import dev.frananda.carbonfootprinttracker.ui.features.home.HomeScreen
 import dev.frananda.carbonfootprinttracker.ui.features.profile.ProfileScreen
+import dev.frananda.carbonfootprinttracker.ui.navigation.Analytics
 import dev.frananda.carbonfootprinttracker.ui.navigation.BottomNavItem
+import dev.frananda.carbonfootprinttracker.ui.navigation.History
+import dev.frananda.carbonfootprinttracker.ui.navigation.Home
+import dev.frananda.carbonfootprinttracker.ui.navigation.Profile
 
 @Composable
-fun MainScreen(
-    onLogout: () -> Unit
-): Unit {
+fun MainScreen(): Unit {
     val bottomNavController = rememberNavController()
-
-    val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.History,
-        BottomNavItem.Analytics,
-        BottomNavItem.Profile
-    )
 
     Scaffold(
         bottomBar = {
@@ -43,19 +39,19 @@ fun MainScreen(
                 val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
 
-                items.forEach { screen ->
+                BottomNavItem.items.forEach { item ->
                     NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.title) },
-                        label = { Text(screen.title) },
-                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                        icon = { Icon(item.icon, contentDescription = item.title) },
+                        label = { Text(item.title) },
+                        selected = currentDestination?.hierarchy?.any {
+                            it.hasRoute(item.route::class)
+                        } == true,
                         onClick = {
-                            bottomNavController.navigate(screen.route) {
+                            bottomNavController.navigate(item.route) {
                                 popUpTo(bottomNavController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
-
                                 launchSingleTop = true
-
                                 restoreState = true
                             }
                         }
@@ -66,21 +62,13 @@ fun MainScreen(
     ) { innerPadding ->
         NavHost(
             navController = bottomNavController,
-            startDestination = BottomNavItem.Home.route,
+            startDestination = Home,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(BottomNavItem.Home.route) {
-                HomeScreen(onNavigateToLogin = onLogout)
-            }
-            composable(BottomNavItem.History.route) {
-                HistoryScreen()
-            }
-            composable(BottomNavItem.Analytics.route) {
-                AnalyticsScreen()
-            }
-            composable(BottomNavItem.Profile.route) {
-                ProfileScreen()
-            }
+            composable<Home> { HomeScreen() }
+            composable<History> { HistoryScreen() }
+            composable<Analytics> { AnalyticsScreen() }
+            composable<Profile> { ProfileScreen() }
         }
     }
 }

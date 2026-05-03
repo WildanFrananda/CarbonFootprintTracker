@@ -1,6 +1,5 @@
 package dev.frananda.carbonfootprinttracker.ui.features.auth
 
-import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,12 +54,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.frananda.carbonfootprinttracker.R
 import dev.frananda.carbonfootprinttracker.core.utils.Resource
+import dev.frananda.carbonfootprinttracker.core.extension.isValidEmail
 import dev.frananda.carbonfootprinttracker.data.remote.RegisterRequest
 import dev.frananda.carbonfootprinttracker.ui.features.auth.components.RegisterInputField
-
-fun isValidEmail(email: String): Boolean {
-    return Patterns.EMAIL_ADDRESS.matcher(email).matches()
-}
 
 @Composable
 fun RegisterScreen(
@@ -271,7 +267,7 @@ fun RegisterScreen(
                             shape = RoundedCornerShape(16.dp),
                             enabled = authState !is Resource.Loading &&
                                     agreeToTerms &&
-                                    isValidEmail(email) &&
+                                    email.isValidEmail() &&
                                     password == confirmPassword
                         ) {
                             if (authState is Resource.Loading) {
