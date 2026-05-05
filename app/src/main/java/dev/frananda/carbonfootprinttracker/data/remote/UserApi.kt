@@ -9,7 +9,7 @@ import retrofit2.http.PUT
 data class UserProfileDto(
     val email: String,
     val display_name: String,
-    val daily_target_kg: Double
+    val daily_target_kg: Double?
 )
 
 @Serializable

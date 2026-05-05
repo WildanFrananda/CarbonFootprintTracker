@@ -20,21 +20,16 @@ val googleClientId = localProperties.getProperty("GOOGLE_CLIENT_ID") ?: ""
 
 android {
     namespace = "dev.frananda.carbonfootprinttracker"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "dev.frananda.carbonfootprinttracker"
         minSdk = 24
-        //noinspection OldTargetApi
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "dev.frananda.carbonfootprinttracker.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -70,6 +65,8 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
         }
     }
     kotlinOptions {
@@ -80,6 +77,15 @@ android {
 
 ksp {
     arg("dagger.hilt.android.internal.disableAndroidSuperclassValidation", "true")
+}
+
+configurations.all {
+    resolutionStrategy {
+        force(libs.androidx.espresso.core)
+        force(libs.androidx.test.monitor)
+        force(libs.androidx.test.runner)
+        force(libs.androidx.test.rules)
+    }
 }
 
 dependencies {
@@ -101,9 +107,23 @@ dependencies {
     implementation(libs.core)
 
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.mockwebserver)
+    testImplementation(libs.truth)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.monitor)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.truth)
+    kspAndroidTest(libs.hilt.compiler)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
